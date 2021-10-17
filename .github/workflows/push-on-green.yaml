@@ -129,6 +129,7 @@ jobs:
       - name: Coverage commit status
         # Use github commit status api to upload coverage report.
         run: |
+          echo $total
           curl --request POST \
           --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }} \
           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
