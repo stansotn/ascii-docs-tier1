@@ -151,6 +151,6 @@ jobs:
             "conclusion": "neutral",
             "output": {
               "title": "Coverage",
-              "summary": "'${total}'",
+              "summary": "'${total}'"
             }
           }'

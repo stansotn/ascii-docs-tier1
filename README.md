@@ -1,4 +1,4 @@
-# ascii-docs-tier1 #
+# ascii-docs #
 A distributed collaborative text editor.
 
 This repository contains server code of the ascii-docs project.
