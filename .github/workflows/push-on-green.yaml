@@ -153,5 +153,4 @@ jobs:
               "title": "Coverage",
               "summary": "'${total}'",
             }
-          }' \
-          --fail
+          }'
