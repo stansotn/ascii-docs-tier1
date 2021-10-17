@@ -1,9 +1,14 @@
+# github actions configuration file.
+# Stanislav Sotnikov (ssotnikov@ccny.cuny.edu)
+
 on:
-  push:
-    branches: [master]
+  pull_request:
+    branches: [master, release/*]
 
 jobs:
   format-check:
+    # Checks formatting with black.
+    name: format-check
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -39,6 +44,8 @@ jobs:
           pipenv run isort --check tests/ ascii_docs_t1/
 
   mypy-check:
+    name: mypy-check
+    # Check proper type annotations with mypy.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -70,23 +77,26 @@ jobs:
           pipenv run mypy tests/ ascii_docs_t1
 
   tests:
+    name: tests
+    # Run unittests and update coverage.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [mypy-check, format-check]
     permissions:
       statuses: write
+      checks: write
     steps:
-      - name: Set commit as pending
-        run: |
-          curl --request POST \
-          --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }} \
-          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          --data '{
-            "state": "pending",
-            "description": "Running Tests",
-            "context": "coverage"
-          }' \
-          --fail
+#      - name: Set commit status as pending
+#        run: |
+#          curl --request POST \
+#          --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }} \
+#          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+#          --data '{
+#            "state": "pending",
+#            "description": "Running Tests",
+#            "context": "coverage"
+#          }' \
+#          --fail
       - name: Checkout repository code
         uses: actions/checkout@v2
 
@@ -113,11 +123,12 @@ jobs:
       - name: Run pytest
         run: |
           pipenv run pytest --cov=ascii_docs_t1/ tests/ > cov.txt
-
-      - name: Upload coverage
-        run: |
           total=$(cat cov.txt | grep TOTAL | grep -o -E [0-9]+%$)
           echo "Coverage: ${total}"
+
+      - name: Coverage commit status
+        # Use github commit status api to upload coverage report.
+        run: |
           curl --request POST \
           --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }} \
           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
@@ -125,5 +136,22 @@ jobs:
             "state": "success",
             "description": "'${total}'",
             "context": "coverage"
+          }' \
+          --fail
+      - name: Coverage check in PR
+        # Use github checks api to upload coverage to PR checks.
+        run: |
+          curl --request POST \
+          --url https://api.github.com/repos/${{ github.repository }}/check-runs \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          --header 'Accept: application/vnd.github.v3+json' \
+          --data '{
+            "name": "coverage",
+            "head_sha": "${{ github.sha }}",
+            "conclusion": "neutral",
+            "output": {
+              "title": "Coverage",
+              "summary": "'${total}'",
+            }
           }' \
           --fail
