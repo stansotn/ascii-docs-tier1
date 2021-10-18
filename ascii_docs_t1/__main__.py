@@ -6,5 +6,12 @@
 def hello_world(name: str) -> str:
     """
     Dummy hello world.
+
+    An exemplary hello world function.
+
+    Args:
+        name: Hello who now.
+    Returns:
+        Hello world message.
     """
     return f"hello {name}"
